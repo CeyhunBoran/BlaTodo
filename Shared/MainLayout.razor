@@ -3,14 +3,16 @@
 <PageTitle>Todo</PageTitle>
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
     <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+        <div class="title-bar">
+            <div class="title-bar-text">To Do List</div>
+            <div class="title-bar-controls">
+                <button aria-label="Minimize"></button>
+                <button aria-label="Restore"></button>
+                <button aria-label="Close"></button>
+            </div>
         </div>
+
 
         <article class="content px-4">
             @Body
