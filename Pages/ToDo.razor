@@ -1,13 +1,18 @@
-﻿@page "/todo"
+﻿@page "/"
+@using Todo.Data
 @using Todo.Models
 @using Todo.Services
+@using Microsoft.EntityFrameworkCore
 
 @inherits OwningComponentBase<TodoService>
+@inject IDbContextFactory<TodoDbContext> ContextFactory
+@inject NavigationManager NavigationManager
 
 
-
-<h1>To-Do List</h1>
-
+@if (items != null)
+{
+    <button style="margin:0 auto; display:block; width:100px;height:30px" @onclick="NavigateToCreatePage">Add Item</button>
+}
 @if (items == null)
 {
     <p><em>Loading...</em></p>
@@ -21,49 +26,50 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Remove</th>
+                <th>id</th>
                 <th>
                     <span class="sort-link" @onclick=@(() => SortTable("DateCreated"))>Date</span>
                     <span>@(GetSortStyle("DateCreated"))</span>
                 </th>
-                <th>
-                    <span class="sort-link" @onclick=@(() => SortTable("Description"))>Description</span>
-                    <span>@(GetSortStyle("Description"))</span>
-                </th>
+                <th>Title</th>
+                <th>Category</th>
                 <th>Is Complete</th>
+                <th>Edit</th>
+                <th>Remove</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in items)
             {
-            <tr style="@(item.IsComplete ? "text-decoration: line-through" : "")">
-                <td><button @onclick="(() => RemoveTodo(item.Id))"><i class="oi oi-trash"></i></button></td>
+            <tr>
+                <td>@item.Id</td>
                 <td>@item.DateCreated</td>
-                <td>@item.Title</td>
+                <td style="@(item.IsComplete ? "text-decoration: line-through" : "")">@item.Title</td>
+                <td>@item.Category</td>
                 <td>
                     @if (item.IsComplete)
                     {
-                        <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" checked />
+                        <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" id="@item.Id" checked />
+                        <label for="@item.Id">&nbsp;</label>
                     }
                     else
                     {
-                        <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" />
+                        <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" id="@item.Id" />
+                        <label for="@item.Id">&nbsp;</label>
                     }
                 </td>
+                <td><button @onclick='(() => NavigateToUpdatePage(item.Id.ToString("N")))'><i class="oi oi-pencil"></i></button></td>
+                <td><button @onclick="(() => RemoveTodo(item.Id))"><i class="oi oi-trash"></i></button></td>
             </tr>
             }
         </tbody>
     </table>
 }
 
-@if (items != null)
-{
-    <input placeholder="A new ToDo item" @bind="@newItem" />
-    <button @onclick="AddTodo">Create</button>
-}
+
 
 @code{
-    List<TodoItem> items = new List<TodoItem>();
+    public List<TodoItem> items = new List<TodoItem>();
     private string newItem;
     private bool IsSortedAscending;
     private string CurrentSortColumn;
@@ -75,9 +81,17 @@ else
     /// <returns></returns>
     protected override void OnInitialized()
     {
-        //items = ToDoService.Get();
+        GetTodos();
+        GetSortStyle("DateCreated");
     }
-
+    private void NavigateToUpdatePage(string id)
+    {
+        NavigationManager.NavigateTo($"todoupdate/{id}");
+    }
+    private void NavigateToCreatePage()
+    {
+        NavigationManager.NavigateTo("todocreate");
+    }
     /// <summary>
     /// This method adds a new ToDo item.
     /// </summary>
@@ -92,20 +106,28 @@ else
                 Id = Guid.NewGuid()
             };
 
-            //items = ToDoService.Add(newToDoItem);
+            Service.Add(newToDoItem);
+            GetTodos();
 
             newItem = string.Empty; //We need to reset this string, otherwise the text box will still contain the value typed in.
         }
     }
-
+    /// <summary>
+    /// This method Toggles isCompleted attribute
+    /// </summary>
     private void ToggleToDo(Guid id)
     {
-       // items = ToDoService.Toggle(id);
-    }
+        Service.Toggle(id);
+        GetTodos();
 
+    }
+    /// <summary>
+    /// This method removes a Todo item.
+    /// </summary>
     private void RemoveTodo(Guid id)
     {
-      //  items = ToDoService.Delete(id);
+        Service.Delete(id);
+        GetTodos();
     }
 
     private string GetSortStyle(string columnName)
@@ -113,7 +135,7 @@ else
         if (CurrentSortColumn != columnName)
         {
             return string.Empty;
-        }
+        }   
         if (IsSortedAscending)
         {
             return "▲";
@@ -128,13 +150,12 @@ else
     {
         if (columnName != CurrentSortColumn)
         {
-            //We need to force order by descending on the new column
             items = items.OrderBy(x => x.GetType().GetProperty(columnName).GetValue(x, null)).ToList();
             CurrentSortColumn = columnName;
             IsSortedAscending = true;
 
         }
-        else //Sorting against same column but in different direction
+        else
         {
             if (IsSortedAscending)
             {
@@ -147,5 +168,10 @@ else
 
             IsSortedAscending = !IsSortedAscending;
         }
+    }
+    public void GetTodos()
+    {
+        items = Service.GetAll().OrderBy(x => x.DateCreated).ToList();
+        
     }
 }

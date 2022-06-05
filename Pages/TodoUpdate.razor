@@ -1,0 +1,63 @@
+﻿@page "/todoupdate/{id}"
+@using Todo.Models
+@using Todo.Services
+
+@inherits OwningComponentBase<TodoService>
+@inject NavigationManager Navigate
+
+
+<div style="margin:0 auto;width:400px;">
+    <div class="window" style="width: 400px">
+    <div class="title-bar">
+        <div class="title-bar-text">Update Todo Item</div>
+        <div class="title-bar-controls">
+            <button aria-label="Minimize"></button>
+            <button aria-label="Maximize"></button>
+            <button aria-label="Close"></button>
+        </div>
+    </div>
+    <div class="window-body">
+        <div>
+            <div class="input">
+                <label for="title">Title</label>
+                <input class="title w-100" id="title" placeholder="@item.Title" @bind="title" />
+            </div>
+            <div class="input">
+                <label for="title">Category</label>
+                <input class="category w-100" id="title" placeholder="@item.Category" @bind="category" />
+            </div>
+            <div>
+                <button style="margin-top:12px;" @onclick="UpdateTodo">Update Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    private Guid _id { get { return Guid.Parse(id); } }
+    private List<TodoItem> todoItems = new List<TodoItem>();
+    private TodoItem item;
+    private string title;
+    private string category;
+    public void UpdateTodo()
+    {
+        item.Category = category;
+        item.Title = title;
+        Service.Update(_id, item);
+        NavigateToBack();
+    }
+    public void NavigateToBack()
+    {
+        Navigate.NavigateTo("", true);
+    }
+    protected override void OnInitialized()
+    {
+        todoItems = Service.GetAll();
+        item = todoItems.FirstOrDefault(x => x.Id == _id);
+    }
+}
