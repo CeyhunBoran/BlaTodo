@@ -1,4 +1,7 @@
-﻿using Todo.Data;
+﻿using System.Linq;
+using Todo.Data;
+using Todo.Models;
+
 namespace Todo.Services
 {
     public class TodoService
@@ -9,5 +12,37 @@ namespace Todo.Services
         {
             _dbcontext = dbcontext;
         }
+        public List<TodoItem> GetAll()
+        {
+            return _dbcontext.todoItems.ToList();
+        }
+        public void Toggle(Guid id)
+        {
+            var item = _dbcontext.todoItems.FirstOrDefault(x => x.Id == id);
+            item.IsComplete = !item.IsComplete;
+            _dbcontext.SaveChanges();
+        }
+        public void Add(TodoItem todoItem)
+        {
+            _dbcontext.todoItems.Add(todoItem);
+            _dbcontext.SaveChanges();
+        }
+        public void Delete(Guid id)
+        {
+            var item = _dbcontext.todoItems.FirstOrDefault(x => x.Id == id);
+            _dbcontext.Remove(item);
+            _dbcontext.SaveChanges();
+               
+        }
+        public void Update(Guid id, TodoItem todoItem)
+        {
+            var item = _dbcontext.todoItems.FirstOrDefault(x => x.Id == id);
+            item.Title = todoItem.Title;
+            item.Category = todoItem.Category;
+            _dbcontext.todoItems.Update(item);
+            _dbcontext.SaveChanges();
+     
+        }
+
     }
 }
