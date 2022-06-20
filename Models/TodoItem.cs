@@ -13,5 +13,7 @@ namespace Todo.Models
         public string Category { get; set; }
         public bool IsComplete { get; set; }
         public DateTime DateCreated { get; set; } = DateTime.Now;
+        public Guid UserId { get; set; }
+        public TodoUser User { get; set; }
     }
 }
