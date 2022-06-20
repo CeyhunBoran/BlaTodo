@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using System.Linq;
 using Todo.Data;
 using Todo.Models;
 
@@ -12,9 +15,15 @@ namespace Todo.Services
         {
             _dbcontext = dbcontext;
         }
+       
+
         public List<TodoItem> GetAll()
         {
             return _dbcontext.todoItems.ToList();
+        }
+        public List<TodoItem> GetAllById(Guid id)
+        {
+            return _dbcontext.todoItems.Where(x => x.User.Id == id).ToList();
         }
         public void Toggle(Guid id)
         {

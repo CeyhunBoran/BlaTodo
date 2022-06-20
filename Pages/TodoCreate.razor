@@ -1,9 +1,11 @@
 ﻿@page "/todocreate"
+@using Microsoft.AspNetCore.Identity
 @using Todo.Models
 @using Todo.Services
 
 @inherits OwningComponentBase<TodoService>
 @inject NavigationManager Navigate
+@inject UserManager<TodoUser> UserManager
 
 <div style="margin:0 auto;width:400px;">
     <div class="window" style="width: 400px">
@@ -37,9 +39,22 @@
     [Parameter]
     public string id { get; set; }
     private Guid _id { get { return Guid.Parse(id); } }
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
     private List<TodoItem> todoItems = new List<TodoItem>();
+    public TodoUser currentUser;
     private string title;
     private string category;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await authenticationState).User;
+        if(user.Identity.IsAuthenticated)
+        {
+            currentUser = await UserManager.GetUserAsync(user);
+        }
+    }
+
     public void CreateTodo()
     {
         if (!string.IsNullOrWhiteSpace(title))
@@ -49,9 +64,10 @@
                     DateCreated = DateTime.Now,
                     Title = title,
                     Category = category,
-                    Id = Guid.NewGuid()
+                    Id = Guid.NewGuid(),
+                    UserId = currentUser.Id
+                    
                 };
-
             Service.Add(newToDoItem);
 
             title = string.Empty;

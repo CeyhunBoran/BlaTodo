@@ -3,11 +3,13 @@
 @using Todo.Models
 @using Todo.Services
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Identity
 
 @inherits OwningComponentBase<TodoService>
-@inject IDbContextFactory<TodoDbContext> ContextFactory
 @inject NavigationManager NavigationManager
-
+@inject SignInManager<TodoUser> SignInManager
+@inject UserManager<TodoUser> UserManager
+@attribute [Authorize]
 
 @if (items != null)
 {
@@ -41,26 +43,26 @@ else
         <tbody>
             @foreach (var item in items)
             {
-            <tr>
-                <td>@item.Id</td>
-                <td>@item.DateCreated</td>
-                <td style="@(item.IsComplete ? "text-decoration: line-through" : "")">@item.Title</td>
-                <td>@item.Category</td>
-                <td>
-                    @if (item.IsComplete)
-                    {
-                        <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" id="@item.Id" checked />
-                        <label for="@item.Id">&nbsp;</label>
-                    }
-                    else
-                    {
-                        <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" id="@item.Id" />
-                        <label for="@item.Id">&nbsp;</label>
-                    }
-                </td>
-                <td><button @onclick='(() => NavigateToUpdatePage(item.Id.ToString("N")))'><i class="oi oi-pencil"></i></button></td>
-                <td><button @onclick="(() => RemoveTodo(item.Id))"><i class="oi oi-trash"></i></button></td>
-            </tr>
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.DateCreated</td>
+                    <td style="@(item.IsComplete ? "text-decoration: line-through" : "")">@item.Title</td>
+                    <td>@item.Category</td>
+                    <td>
+                        @if (item.IsComplete)
+                        {
+                            <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" id="@item.Id" checked />
+                            <label for="@item.Id">&nbsp;</label>
+                        }
+                        else
+                        {
+                            <input type=checkbox @onchange="(() => ToggleToDo(item.Id))" id="@item.Id" />
+                            <label for="@item.Id">&nbsp;</label>
+                        }
+                    </td>
+                    <td><button @onclick='(() => NavigateToUpdatePage(item.Id.ToString("N")))'><i class="oi oi-pencil"></i></button></td>
+                    <td><button @onclick="(() => RemoveTodo(item.Id))"><i class="oi oi-trash"></i></button></td>
+                </tr>
             }
         </tbody>
     </table>
@@ -68,8 +70,11 @@ else
 
 
 
-@code{
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
     public List<TodoItem> items = new List<TodoItem>();
+    public TodoUser currentUser;
     private string newItem;
     private bool IsSortedAscending;
     private string CurrentSortColumn;
@@ -81,8 +86,18 @@ else
     /// <returns></returns>
     protected override void OnInitialized()
     {
-        GetTodos();
-        GetSortStyle("DateCreated");
+
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await authenticationState).User;
+        if(user.Identity.IsAuthenticated)
+        {
+            currentUser = await UserManager.GetUserAsync(user);
+            GetTodos();
+            GetSortStyle("DateCreated");
+        }
     }
     private void NavigateToUpdatePage(string id)
     {
@@ -100,12 +115,14 @@ else
         if (!string.IsNullOrWhiteSpace(newItem))
         {
             var newToDoItem = new TodoItem()
-            {
-                DateCreated = DateTime.Now,
-                Title = newItem,
-                Id = Guid.NewGuid()
-            };
-
+                {
+                    DateCreated = DateTime.Now,
+                    Title = newItem,
+                    Id = Guid.NewGuid(),
+                    User = currentUser,
+                    UserId = currentUser.Id
+                };
+            currentUser.TodoItems.Add(newToDoItem);
             Service.Add(newToDoItem);
             GetTodos();
 
@@ -135,7 +152,7 @@ else
         if (CurrentSortColumn != columnName)
         {
             return string.Empty;
-        }   
+        }
         if (IsSortedAscending)
         {
             return "▲";
@@ -171,7 +188,7 @@ else
     }
     public void GetTodos()
     {
-        items = Service.GetAll().OrderBy(x => x.DateCreated).ToList();
-        
+        items = Service.GetAllById(currentUser.Id).OrderBy(x => x.DateCreated).ToList();
+
     }
 }
