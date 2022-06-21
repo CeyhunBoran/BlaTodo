@@ -95,40 +95,18 @@ else
         if(user.Identity.IsAuthenticated)
         {
             currentUser = await UserManager.GetUserAsync(user);
-            //GetTodos();
-            await GetTodosCached();
-            GetSortStyle("DateCreated");
+            GetTodos();
         }
     }
+
     private void NavigateToUpdatePage(string id)
     {
         NavigationManager.NavigateTo($"todoupdate/{id}");
     }
+
     private void NavigateToCreatePage()
     {
         NavigationManager.NavigateTo("todocreate");
-    }
-    /// <summary>
-    /// This method adds a new ToDo item.
-    /// </summary>
-    private void AddTodo()
-    {
-        if (!string.IsNullOrWhiteSpace(newItem))
-        {
-            var newToDoItem = new TodoItem()
-                {
-                    DateCreated = DateTime.Now,
-                    Title = newItem,
-                    Id = Guid.NewGuid(),
-                    User = currentUser,
-                    UserId = currentUser.Id
-                };
-            currentUser.TodoItems.Add(newToDoItem);
-            Service.Add(newToDoItem);
-            GetTodos();
-
-            newItem = string.Empty; //We need to reset this string, otherwise the text box will still contain the value typed in.
-        }
     }
     /// <summary>
     /// This method Toggles isCompleted attribute
@@ -137,6 +115,7 @@ else
     {
         Service.Toggle(id);
         GetTodos();
+        //await GetTodosCached();
 
     }
     /// <summary>
@@ -146,6 +125,7 @@ else
     {
         Service.Delete(id);
         GetTodos();
+        //await GetTodosCached();
     }
 
     private string GetSortStyle(string columnName)
@@ -192,9 +172,6 @@ else
         items = Service.GetAllById(currentUser.Id).OrderBy(x => x.DateCreated).ToList();
 
     }
-    public async Task GetTodosCached()
-    {
-        items = await Task.Run(() => Service.GetTodoItemsCached(currentUser.Id));
-    }
+    
    
 }
