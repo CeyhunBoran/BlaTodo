@@ -73,7 +73,7 @@ else
 @code {
     [CascadingParameter]
     private Task<AuthenticationState> authenticationState { get; set; }
-    public List<TodoItem> items = new List<TodoItem>();
+    public List<TodoItem> items;
     public TodoUser currentUser;
     private string newItem;
     private bool IsSortedAscending;
@@ -86,7 +86,7 @@ else
     /// <returns></returns>
     protected override void OnInitialized()
     {
-
+        //GetTodos();
 
     }
     protected override async Task OnInitializedAsync()
@@ -95,7 +95,8 @@ else
         if(user.Identity.IsAuthenticated)
         {
             currentUser = await UserManager.GetUserAsync(user);
-            GetTodos();
+            //GetTodos();
+            await GetTodosCached();
             GetSortStyle("DateCreated");
         }
     }
@@ -191,4 +192,9 @@ else
         items = Service.GetAllById(currentUser.Id).OrderBy(x => x.DateCreated).ToList();
 
     }
+    public async Task GetTodosCached()
+    {
+        items = await Task.Run(() => Service.GetTodoItemsCached(currentUser.Id));
+    }
+   
 }

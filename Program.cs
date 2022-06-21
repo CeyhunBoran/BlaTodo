@@ -21,6 +21,7 @@ builder.Services.AddDbContext<TodoDbContext>(options => options.UseNpgsql(builde
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<TodoUser>>();
 builder.Services.AddScoped<TodoService>();
+builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
